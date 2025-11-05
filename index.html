@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang=\"es\">
+<head>
+  <meta charset=\"utf-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+  <title>CRM • Un Producto</title>
+  <link rel=\"icon\" href=\"assets/favicon.svg\">
+  <style>
+    :root{
+      --bg:#0a0d12; --panel:#0f1420; --muted:#8ea0b5; --text:#eaf0f7; --brand:#0c66ff; --ok:#10b981; --warn:#f59e0b; --bad:#ef4444; --card:#121927; --line:#1e293b;
+      --shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1020,#0a0d12);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,\"Helvetica Neue\",Arial}
+    a{color:inherit}
+    .app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+    /* Sidebar */
+    .sidebar{background:linear-gradient(180deg,#0f1420,#0c1322);border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100svh}
+    .logo{display:flex;gap:10px;align-items:center;margin-bottom:18px}
+    .logo-dot{width:30px;height:30px;border-radius:8px;background:conic-gradient(from 210deg at 50% 50%,#0c66ff 0 40%,#5b9dff 40% 70%,#00e5a8 70% 100%);box-shadow:var(--shadow)}
+    .logo h1{margin:0;font-size:16px;letter-spacing:.3px}
+    .nav{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+    .nav button{all:unset;cursor:pointer;padding:10px 12px;border-radius:10px;display:flex;gap:10px;align-items:center;color:var(--muted)}
+    .nav button.active,.nav button:hover{background:rgba(12,102,255,.12);color:#cfe4ff}
+    .nav .badge{margin-left:auto;background:#1c2537;border:1px solid #2b3750;color:#bcd2ff;padding:2px 8px;border-radius:20px;font-size:12px}
+    .spacer{flex:1}
+    .foot{margin-top:auto;color:var(--muted);font-size:12px;padding:10px 0}
+
+    /* Header */
+    .main{display:flex;flex-direction:column;min-width:0}
+    .top{display:flex;gap:14px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(12,14,20,.5);backdrop-filter:blur(6px);position:sticky;top:0;z-index:5}
+    .search{flex:1;position:relative}
+    .search input{width:100%;background:#0e1423;border:1px solid #1b2436;border-radius:12px;padding:10px 12px;color:#dbe7ff}
+    .user{display:flex;align-items:center;gap:10px}
+    .avatar{width:34px;height:34px;border-radius:10px;background:linear-gradient(180deg,#1b2b48,#0f1a2e);border:1px solid #243357}
+
+    /* Content */
+    .content{padding:18px;display:grid;gap:16px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+    .kpi{display:flex;flex-direction:column;gap:8px}
+    .kpi h3{margin:0;color:#bcd2ff;font-weight:600;font-size:13px}
+    .kpi .big{font-size:28px;font-weight:700;letter-spacing:.3px}
+    .kpi .trend{font-size:12px;color:var(--muted)}
+
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{background:linear-gradient(180deg,#0f1f3e,#0e1a33);border:1px solid #253454;color:#e5efff;padding:8px 12px;border-radius:10px;cursor:pointer}
+    .btn.primary{background:linear-gradient(180deg,#0c66ff,#0a58df);border-color:#418aff}
+    .btn.ghost{background:transparent;border-color:#253454}
+
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #1b263b}
+    th{font-size:12px;color:#a9bdd8;text-align:left}
+    tr:hover td{background:#0f1626}
+    .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #24324d;background:#111a2c;color:#bed5ff}
+    .tag.ok{border-color:#1d3b2f;background:#0f1f1a;color:#9ce2c1}
+    .tag.bad{border-color:#3f1b1b;background:#1a0f0f;color:#ffbdbd}
+    .tag.warn{border-color:#3a2e17;background:#1a140c;color:#ffd89a}
+
+    .split{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+
+    /* Modal */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+    .modal.open{display:flex}
+    .dialog{width:min(680px,100%);background:#0e1423;border:1px solid #22304d;border-radius:16px;box-shadow:var(--shadow)}
+    .dialog header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #1c2741}
+    .dialog .body{padding:16px;display:grid;gap:12px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    label{font-size:12px;color:#a3b6d3}
+    input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #213152;background:#0b1120;color:#dbe7ff}
+    textarea{min-height:90px}
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .app{grid-template-columns:1fr}
+      .sidebar{position:static;height:auto}
+      .split{grid-template-columns:1fr}
+      .grid{grid-template-columns:repeat(6,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <div class=\"app\">
+    <aside class=\"sidebar\">
+      <div class=\"logo\"><div class=\"logo-dot\"></div><h1>CRM • Un Producto</h1></div>
+      <div class=\"nav\">
+        <button class=\"active\" data-page=\"dashboard\">🏠 Dashboard</button>
+        <button data-page=\"pedidos\">📦 Pedidos <span class=\"badge\" id=\"badgePedidos\">0</span></button>
+        <button data-page=\"clientes\">👥 Clientes</button>
+        <button data-page=\"inventario\">📦 Inventario</button>
+        <button data-page=\"mensajeria\">💬 Mensajería</button>
+        <button data-page=\"ajustes\">⚙️ Ajustes</button>
+      </div>
+      <div class=\"spacer\"></div>
+      <div class=\"foot\">Hecho con cariño • demo local</div>
+    </aside>
+
+    <main class=\"main\">
+      <div class=\"top\">
+        <div class=\"search\"><input id=\"search\" placeholder=\"Buscar clientes, pedidos, email…\" /></div>
+        <div class=\"user\"><span id=\"clock\"></span><div class=\"avatar\"></div></div>
+      </div>
+
+      <div class=\"content\" id=\"view-dashboard\">
+        <div class=\"grid\">
+          <section class=\"card kpi\" style=\"grid-column: span 3\">
+            <h3>Ingresos (30 días)</h3>
+            <div class=\"big\" id=\"kpiRevenue\">$0</div>
+            <div class=\"trend\" id=\"kpiRevenueTrend\">—</div>
+          </section>
+          <section class=\"card kpi\" style=\"grid-column: span 3\">
+            <h3>Pedidos</h3>
+            <div class=\"big\" id=\"kpiOrders\">0</div>
+            <div class=\"trend\" id=\"kpiOrdersTrend\">—</div>
+          </section>
+          <section class=\"card kpi\" style=\"grid-column: span 3\">
+            <h3>Conversión checkout</h3>
+            <div class=\"big\" id=\"kpiConv\">0%</div>
+            <div class=\"trend\">pagos / links enviados</div>
+          </section>
+          <section class=\"card kpi\" style=\"grid-column: span 3\">
+            <h3>Stock disponible</h3>
+            <div class=\"big\" id=\"kpiStock\">0</div>
+            <div class=\"trend\" id=\"kpiStockWarn\">—</div>
+          </section>
+        </div>
+
+        <div class=\"split\">
+          <section class=\"card\">
+            <div class=\"toolbar\" style=\"margin-bottom:8px\">
+              <button class=\"btn primary\" id=\"btnNuevoPedido\">Nuevo pedido</button>
+              <button class=\"btn ghost\" id=\"btnExportPedidos\">Exportar CSV</button>
+            </div>
+            <table id=\"tblPedidos\">
+              <thead>
+                <tr>
+                  <th>#</th><th>Cliente</th><th>Cantidad</th><th>Total</th><th>Estado</th><th>Pago</th><th>Fecha</th><th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </section>
+
+          <section class=\"card\">
+            <h3 style=\"margin-top:0\">Actividad reciente</h3>
+            <div id=\"timeline\" style=\"display:grid;gap:10px\"></div>
+          </section>
+        </div>
+      </div>
+
+      <div class=\"content\" id=\"view-pedidos\" hidden>
+        <section class=\"card\">
+          <div class=\"toolbar\" style=\"margin-bottom:8px\">
+            <button class=\"btn primary\" id=\"btnNuevoPedido2\">Nuevo pedido</button>
+            <select id=\"filtroEstado\" style=\"max-width:200px\">
+              <option value=\"\">Todos los estados</option>
+              <option>pending</option>
+              <option>paid</option>
+              <option>shipped</option>
+              <option>delivered</option>
+              <option>canceled</option>
+            </select>
+          </div>
+          <table id=\"tblPedidos2\">
+            <thead>
+              <tr>
+                <th>#</th><th>Cliente</th><th>Email</th><th>Cantidad</th><th>Total</th><th>Estado</th><th>Pago</th><th>Fecha</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+      </div>
+
+      <div class=\"content\" id=\"view-clientes\" hidden>
+        <section class=\"card\">
+          <div class=\"toolbar\" style=\"margin-bottom:8px\">
+            <button class=\"btn\" id=\"btnNuevoCliente\">Nuevo cliente</button>
+          </div>
+          <table id=\"tblClientes\">
+            <thead>
+              <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Pedidos</th><th>Último</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+      </div>
+
+      <div class=\"content\" id=\"view-inventario\" hidden>
+        <section class=\"card\">
+          <div class=\"row\">
+            <div>
+              <h3 style=\"margin:0 0 8px\">Inventario</h3>
+              <div id=\"invInfo\"></div>
+            </div>
+            <div>
+              <label>Stock</label>
+              <input id=\"invStock\" type=\"number\" min=\"0\" />
+              <label style=\"margin-top:8px;display:block\">Punto de reposición</label>
+              <input id=\"invReorder\" type=\"number\" min=\"0\" />
+              <button class=\"btn primary\" style=\"margin-top:10px\" id=\"invSave\">Guardar</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class=\"content\" id=\"view-mensajeria\" hidden>
+        <section class=\"card\">
+          <h3 style=\"margin-top:0\">Plantillas WhatsApp</h3>
+          <div class=\"row\">
+            <div>
+              <label>Título</label>
+              <input id=\"tplTitle\" placeholder=\"Confirmación de pago\" />
+            </div>
+            <div>
+              <label>Variables</label>
+              <input placeholder=\"{nombre}, {pedido}, {link}\" disabled />
+            </div>
+          </div>
+          <label style=\"margin-top:8px;display:block\">Mensaje</label>
+          <textarea id=\"tplBody\" placeholder=\"Hola {nombre}, tu pago del pedido {pedido} fue aprobado. ¡Gracias!\" ></textarea>
+          <button class=\"btn primary\" id=\"tplSave\" style=\"margin-top:10px\">Guardar plantilla</button>
+          <div id=\"tplList\" style=\"margin-top:14px;display:grid;gap:8px\"></div>
+        </section>
+      </div>
+
+      <div class=\"content\" id=\"view-ajustes\" hidden>
+        <section class=\"card\">
+          <h3 style=\"margin:0 0 10px\">Ajustes</h3>
+          <div class=\"row\">
+            <div>
+              <label>Nombre del producto</label>
+              <input id=\"setName\" placeholder=\"Producto Único\" />
+            </div>
+            <div>
+              <label>Precio unitario (USD)</label>
+              <input id=\"setPrice\" type=\"number\" step=\"0.01\" />
+            </div>
+          </div>
+          <div class=\"row\">
+            <div>
+              <label>Enlace de pago (Stripe/MercadoPago)</label>
+              <input id=\"setPayLink\" placeholder=\"https://pago.tu-enlace\" />
+            </div>
+            <div>
+              <label>Moneda</label>
+              <select id=\"setCurrency\"><option>USD</option><option>CLP</option><option>MXN</option><option>EUR</option></select>
+            </div>
+          </div>
+          <button class=\"btn primary\" id=\"setSave\" style=\"margin-top:10px\">Guardar</button>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal pedido -->
+  <div class=\"modal\" id=\"modalPedido\">
+    <div class=\"dialog\">
+      <header>
+        <strong>Nuevo pedido</strong>
+        <button class=\"btn ghost\" id=\"closePedido\">Cerrar</button>
+      </header>
+      <div class=\"body\">
+        <div class=\"row\">
+          <div>
+            <label>Nombre cliente</label>
+            <input id=\"pNombre\" />
+          </div>
+          <div>
+            <label>Email</label>
+            <input id=\"pEmail\" type=\"email\" />
+          </div>
+        </div>
+        <div class=\"row\">
+          <div>
+            <label>Teléfono</label>
+            <input id=\"pPhone\" />
+          </div>
+          <div>
+            <label>Cantidad</label>
+            <input id=\"pQty\" type=\"number\" min=\"1\" value=\"1\" />
+          </div>
+        </div>
+        <div class=\"row\">
+          <div>
+            <label>Método de pago</label>
+            <select id=\"pProvider\"><option value=\"Stripe\">Stripe</option><option value=\"MP\">MercadoPago</option><option value=\"Transfer\">Transferencia</option></select>
+          </div>
+          <div>
+            <label>Estado</label>
+            <select id=\"pStatus\"><option>pending</option><option>paid</option><option>shipped</option><option>delivered</option></select>
+          </div>
+        </div>
+        <div>
+          <label>Notas</label>
+          <textarea id=\"pNotes\" placeholder=\"Observaciones del pedido\"></textarea>
+        </div>
+        <div class=\"row\">
+          <div>
+            <label>Total (auto)</label>
+            <input id=\"pTotal\" disabled />
+          </div>
+          <div style=\"display:flex;align-items:flex-end;gap:8px\">
+            <button class=\"btn primary\" id=\"savePedido\">Guardar pedido</button>
+            <a class=\"btn\" id=\"goPayLink\" target=\"_blank\">Abrir link de pago</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (q,ctx=document)=>ctx.querySelector(q);
+    const $$ = (q,ctx=document)=>Array.from(ctx.querySelectorAll(q));
+    const fmt = (n,curr)=> new Intl.NumberFormat('es-ES',{style:'currency',currency:curr||state.settings.currency}).format(n||0);
+    const todayISO = ()=> new Date().toISOString();
+    const uid = ()=> Math.random().toString(36).slice(2,10);
+
+    const initial = {
+      settings: { name:\"Producto Único\", price:29.9, payLink:\"\", currency:\"USD\" },
+      inventory: { sku:\"PROD-001\", stock:100, reorder:20 },
+      clients: [],
+      orders: [],
+      templates: [ {id:uid(), title:\"Confirmación de pago\", body:\"Hola {nombre}, tu pago del pedido {pedido} fue aprobado. ¡Gracias!\"} ],
+      activity: []
+    };
+    const load = ()=> JSON.parse(localStorage.getItem('crm1p')||'null') || initial;
+    const save = ()=> localStorage.setItem('crm1p', JSON.stringify(state));
+    let state = load();
+
+    setInterval(()=>{ $('#clock').textContent = new Date().toLocaleString('es-ES',{hour:'2-digit',minute:'2-digit'}) }, 1000);
+
+    $$('.nav button').forEach(b=>b.onclick=()=>{
+      $$('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+      const pg = b.dataset.page; showView(pg);
+    });
+    function showView(id){
+      ['dashboard','pedidos','clientes','inventario','mensajeria','ajustes'].forEach(v=>{
+        $('#view-'+v).hidden = v!==id;
+      });
+      renderAll();
+    }
+
+    $('#search').addEventListener('input', e=>{
+      const q = e.target.value.toLowerCase();
+      filterTables(q);
+    });
+    function filterTables(q){
+      $$('#tblPedidos tbody tr, #tblPedidos2 tbody tr, #tblClientes tbody tr').forEach(tr=>{
+        tr.style.display = tr.textContent.toLowerCase().includes(q)?'':'none';
+      });
+    }
+
+    function renderSettings(){
+      $('#setName').value = state.settings.name;
+      $('#setPrice').value = state.settings.price;
+      $('#setPayLink').value = state.settings.payLink;
+      $('#setCurrency').value = state.settings.currency;
+    }
+    $('#setSave').onclick = ()=>{
+      state.settings.name = $('#setName').value||state.settings.name;
+      state.settings.price = parseFloat($('#setPrice').value||state.settings.price);
+      state.settings.payLink = $('#setPayLink').value||\"\";
+      state.settings.currency = $('#setCurrency').value;
+      save(); renderAll();
+    }
+    function renderInventory(){
+      $('#invInfo').innerHTML = `<div class=\"tag\">SKU ${state.inventory.sku}</div><div style=\"margin-top:8px\">${state.settings.name} • Precio lista: ${fmt(state.settings.price)}</div>`;
+      $('#invStock').value = state.inventory.stock;
+      $('#invReorder').value = state.inventory.reorder;
+      const warn = $('#kpiStockWarn');
+      warn.textContent = state.inventory.stock <= state.inventory.reorder ? 'Bajo stock — planifica reposición' : 'Stock saludable';
+    }
+    $('#invSave').onclick = ()=>{
+      state.inventory.stock = parseInt($('#invStock').value||0);
+      state.inventory.reorder = parseInt($('#invReorder').value||0);
+      save(); renderAll();
+    }
+
+    function addActivity(text){
+      state.activity.unshift({ id:uid(), text, at: todayISO() });
+      if(state.activity.length>50) state.activity.pop();
+    }
+    function recalcKPIs(){
+      const last30 = state.orders.filter(o=> Date.now()-new Date(o.createdAt).getTime() < 30*864e5 );
+      const revenue = last30.filter(o=>['paid','shipped','delivered'].includes(o.status)).reduce((s,o)=>s+o.total,0);
+      $('#kpiRevenue').textContent = fmt(revenue);
+      $('#kpiOrders').textContent = last30.length;
+      const links = state.orders.filter(o=>o.checkoutSent);
+      const paid = state.orders.filter(o=>o.status==='paid' || o.status==='delivered' || o.status==='shipped');
+      const conv = links.length? Math.round((paid.length/links.length)*100) : 0;
+      $('#kpiConv').textContent = conv+\"%\";
+      $('#kpiStock').textContent = state.inventory.stock;
+      $('#badgePedidos').textContent = state.orders.length;
+    }
+    function renderTimeline(){
+      $('#timeline').innerHTML = state.activity.map(a=>`<div style=\"display:flex;gap:8px;align-items:center\"><div class=\"tag\">${new Date(a.at).toLocaleString()}</div><div>${a.text}</div></div>`).join('');
+    }
+    function renderOrdersTables(){
+      const rows = state.orders.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).map(o=>`
+        <tr>
+          <td>${o.code}</td>
+          <td>${o.client.name}</td>
+          <td>${o.qty}</td>
+          <td>${fmt(o.total,o.currency)}</td>
+          <td><span class=\"tag ${o.status==='paid'?'ok':o.status==='pending'?'warn':o.status==='canceled'?'bad':''}\">${o.status}</span></td>
+          <td>${o.provider||'-'}</td>
+          <td>${new Date(o.createdAt).toLocaleDateString()}</td>
+          <td><button class=\"btn ghost\" data-act=\"adv\" data-id=\"${o.id}\">Avanzar</button></td>
+        </tr>`).join('');
+      $('#tblPedidos tbody').innerHTML = rows;
+      $('#tblPedidos2 tbody').innerHTML = rows;
+
+      $$('#tblPedidos tbody [data-act=\"adv\"], #tblPedidos2 tbody [data-act=\"adv\"]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const o = state.orders.find(x=>x.id===btn.dataset.id);
+          const flow = ['pending','paid','shipped','delivered'];
+          const i = flow.indexOf(o.status); o.status = flow[Math.min(i+1, flow.length-1)];
+          addActivity(\`Pedido \${o.code} → estado \${o.status}\`);
+          save(); renderAll();
+        }
+      });
+    }
+
+    function renderClients(){
+      const map = new Map();
+      state.orders.forEach(o=>{
+        const k = o.client.email; const prev = map.get(k)||{...o.client, orders:0, last:o.createdAt};
+        prev.orders++; if(new Date(o.createdAt)>new Date(prev.last)) prev.last=o.createdAt; map.set(k,prev);
+      });
+      $('#tblClientes tbody').innerHTML = [...map.values()].sort((a,b)=>a.name.localeCompare(b.name)).map(c=>`
+        <tr><td>${c.name}</td><td>${c.email}</td><td>${c.phone||''}</td><td>${c.orders}</td><td>${new Date(c.last).toLocaleDateString()}</td></tr>`).join('');
+    }
+
+    function renderTemplates(){
+      $('#tplList').innerHTML = state.templates.map(t=>`<div class=\"card\"><div style=\"font-weight:600\">${t.title}</div><div style=\"color:var(--muted)\">${t.body}</div></div>`).join('');
+    }
+
+    function exportCSV(){
+      const cols = ['code','client.name','client.email','qty','total','status','provider','createdAt'];
+      const lines = [cols.join(',')].concat(state.orders.map(o=>[
+        o.code, JSON.stringify(o.client.name), o.client.email, o.qty, o.total, o.status, o.provider, o.createdAt
+      ].join(',')));
+      const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pedidos.csv'; a.click();
+    }
+
+    $('#btnExportPedidos').onclick = exportCSV;
+
+    $('#filtroEstado').onchange = ()=>{
+      const val = $('#filtroEstado').value;
+      $$('#tblPedidos2 tbody tr').forEach(tr=>{
+        const has = val? tr.innerText.includes(val) : true;
+        tr.style.display = has?'':'none';
+      });
+    }
+
+    const modal = $('#modalPedido');
+    const openPedido = ()=>{ modal.classList.add('open'); calcTotal(); updatePayLink(); };
+    const closePedido = ()=> modal.classList.remove('open');
+    $('#btnNuevoPedido').onclick = openPedido; $('#btnNuevoPedido2').onclick = openPedido; $('#closePedido').onclick = closePedido;
+
+    function calcTotal(){
+      const qty = parseInt($('#pQty').value||1); const price = state.settings.price; $('#pTotal').value = fmt(qty*price);
+    }
+    function updatePayLink(){
+      const base = state.settings.payLink||'#';
+      const qty = parseInt($('#pQty').value||1);
+      $('#goPayLink').href = base;
+    }
+    $$('#pQty, #setPrice').forEach(i=> i.addEventListener('input', ()=>{ calcTotal(); updatePayLink(); }));
+
+    $('#savePedido').onclick = ()=>{
+      const order = {
+        id: uid(), code: 'ORD-'+Math.floor(1000+Math.random()*8999),
+        client: { name: $('#pNombre').value||'Cliente', email: $('#pEmail').value||'no@mail', phone: $('#pPhone').value||'' },
+        qty: parseInt($('#pQty').value||1),
+        unit: state.settings.price,
+        total: Math.round((parseInt($('#pQty').value||1)*state.settings.price)*100)/100,
+        provider: $('#pProvider').value,
+        status: $('#pStatus').value,
+        currency: state.settings.currency,
+        createdAt: todayISO(), checkoutSent: true
+      };
+      state.orders.push(order);
+      state.inventory.stock = Math.max(0, state.inventory.stock - order.qty);
+      addActivity(\`Nuevo pedido \${order.code} por \${fmt(order.total)} de \${order.client.name}\`);
+      save(); closePedido(); renderAll();
+      ['#pNombre','#pEmail','#pPhone','#pQty','#pNotes'].forEach(s=> $(s).value=''); $('#pQty').value=1; calcTotal();
+    }
+
+    $('#btnNuevoCliente').onclick = ()=>{
+      const nombre = prompt('Nombre del cliente'); if(!nombre) return;
+      const email = prompt('Email del cliente');
+      state.clients.push({ id:uid(), name:nombre, email:email||'', phone:'' });
+      addActivity(\`Nuevo cliente: \${nombre}\`);
+      save(); renderAll();
+    }
+
+    $('#tplSave').onclick = ()=>{
+      const t = { id:uid(), title: $('#tplTitle').value||'Plantilla', body: $('#tplBody').value||'' };
+      state.templates.unshift(t); save(); renderTemplates(); $('#tplTitle').value=''; $('#tplBody').value='';
+    }
+
+    function seedIfEmpty(){
+      if(state.orders.length===0){
+        const demo = [
+          {n:"Ana Pérez", e:"ana@example.com", q:1, st:'paid'},
+          {n:"Luis Soto", e:"luis@example.com", q:2, st:'pending'},
+          {n:"Carla Ruiz", e:"carla@example.com", q:1, st:'shipped'},
+          {n:"Marcos León", e:"marcos@example.com", q:3, st:'delivered'}
+        ];
+        demo.forEach(d=>{
+          state.orders.push({ id:uid(), code:'ORD-'+Math.floor(1000+Math.random()*8999), client:{name:d.n,email:d.e,phone:''}, qty:d.q, unit:state.settings.price, total:d.q*state.settings.price, provider:'Stripe', status:d.st, currency:state.settings.currency, createdAt: todayISO(), checkoutSent:true });
+        });
+        state.inventory.stock = Math.max(0, state.inventory.stock - demo.reduce((s,x)=>s+x.q,0));
+        addActivity('Datos demo cargados');
+        save();
+      }
+    }
+
+    function renderAll(){
+      renderSettings();
+      renderInventory();
+      recalcKPIs();
+      renderTimeline();
+      renderOrdersTables();
+      renderClients();
+      renderTemplates();
+      filterTables($('#search').value.toLowerCase());
+    }
+
+    seedIfEmpty();
+    renderAll();
+  </script>
+</body>
+</html>
